@@ -1,0 +1,49 @@
+[build-system]
+
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+
+name = "You-MP3"
+version = "1"
+license = "Unlicense"
+description = "Tool for downloading music with added metadata"
+readme = "README.md"
+
+repository = "https://github.com/RuanMiguel-DRD/You-MP3"
+
+authors = ["RuanMiguel-DRD <ruanmigueldrd@outlook.com>"]
+
+keywords = ["download", "music", "youtube"]
+
+classifiers = [
+    "Natural Language :: English",
+
+    "Intended Audience :: End Users/Desktop",
+
+    "Operating System :: OS Independent",
+
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+
+    "Development Status :: 5 - Production/Stable",
+
+    "Environment :: Console",
+
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
+
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[tool.poetry.dependencies]
+
+python = "^3.12"
+mutagen = "^1.47.0"
+pillow = "^10.4.0"
+yt-dlp = "^2024.8.6"
+
+[tool.poetry.scripts]
+
+you-mp3 = "you_mp3.__main__:main"

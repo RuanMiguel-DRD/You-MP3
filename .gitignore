@@ -1,0 +1,11 @@
+__pycache__
+
+.mypy_cache
+.vscode
+
+dist
+
+*.mp3
+*.webp
+*.webm
+*.part
