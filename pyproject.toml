@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 
 name = "You-MP3"
-version = "1"
+version = "1.0.1"
 license = "Unlicense"
 description = "Tool for downloading music with added metadata"
 readme = "README.md"
@@ -39,7 +39,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 
-python = "^3.12"
+python = "^3.10"
 mutagen = "^1.47.0"
 pillow = "^10.4.0"
 yt-dlp = "^2024.8.6"
