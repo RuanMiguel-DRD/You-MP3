@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 
 name = "You-MP3"
-version = "1.0.2"
+version = "1.0.0-alpha" # Renaming the base version to alpha for compatibility issues with the PyPI platform
 license = "Unlicense"
 description = "Tool for downloading music with added metadata"
 readme = "README.md"
