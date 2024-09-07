@@ -71,7 +71,7 @@ def create_cover(image_path: str, image_size: tuple[int, int] = (600, 600)) -> s
         image_size (optional): tuple containing the height and width of the image in integers
 
     Returns:
-        file_name: string containing the path of the created cover file
+        str: path of the created cover image file
     """
 
     image_data: image = Image.open(image_path)
