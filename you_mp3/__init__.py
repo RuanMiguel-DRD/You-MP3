@@ -8,7 +8,7 @@ __description__ = "Library for downloading music and adding metadata"
 
 __status__ = "Educational"
 __license__ = "Unlicense"
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 
 __author__ = "RuanMiguel-DRD"
 __maintainer__ = __author__

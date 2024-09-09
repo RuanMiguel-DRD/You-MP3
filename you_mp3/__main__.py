@@ -1,42 +1,16 @@
 "Module for using the tool via the command line"
 
-from argparse import ArgumentParser, Namespace
+from argparse import _ArgumentGroup as ArgumentGroup, ArgumentParser, Namespace
 
 from os import remove
-from os.path import exists, splitext
+from os.path import isdir, splitext
+
+from pathlib import Path
 
 from typing import Any
 
 from .downloader import Setting, download_music, extract_playlist
 from .metadata import add_metadata, create_cover
-
-
-def _download_handler(url: str, data: dict[str, Any], config: dict[str, Any]) -> None:
-    """Internal music download function
-
-    Args:
-        url: link of the music that will be downloaded
-        data: pre-extracted metadata that will be added to the music
-        config: configuration dictionary that will be used in YoutubeDL
-    """
-
-    # Downloading music
-
-    data_music: dict[str, str] = download_music(url, config)
-
-    data = {**data, **data_music}
-
-    path: str = data["path"]
-    path, _ = splitext(path)
-
-    image_path: str = create_cover(f"{path}.webp")
-    image: bytes = open(image_path, "rb").read()
-
-    data["cover"] = image
-
-    remove(image_path)
-
-    add_metadata(f"{path}.mp3", data)
 
 
 def main() -> None:
@@ -47,7 +21,7 @@ def main() -> None:
     arguments: ArgumentParser = ArgumentParser(
         prog="you-mp3",
         description="Program to download mp3 music directly from Youtube",
-        epilog="https://github.com/RuanMiguel-DRD/You-MP3",
+        epilog="https://github.com/RuanMiguel-DRD/You-MP3"
     )
 
     arguments.add_argument(
@@ -57,10 +31,11 @@ def main() -> None:
     )
 
     arguments.add_argument(
-        "-g",
-        dest="genre",
-        help="musical genres that will be attributed to the music",
-        type=str
+        "-d --debug",
+        help="enables runtime debugging",
+        action="store_true",
+        default=False,
+        dest="debug"
     )
 
     arguments.add_argument(
@@ -70,14 +45,19 @@ def main() -> None:
         type=str
     )
 
-    arguments.add_argument(
-        "-q",
-        dest="quality",
-        default="medium",
-        choices=["low", "medium", "high"],
-        help="choose the sound quality level",
+    group: ArgumentGroup = arguments.add_argument_group(
+        title="editing",
+        description="parameters for editing music"
+    )
+
+    group.add_argument(
+        "-g",
+        dest="genre",
+        help="musical genres that will be attributed",
+        default="Unknown Genre",
         type=str
     )
+
 
     # Argument handling
 
@@ -85,38 +65,47 @@ def main() -> None:
 
     url: str = args.url
 
-    genre: str | None = args.genre if args.genre != None else "Unknown Genre"
+    debug: bool = args.debug
     output: str | None = args.output
-    quality: str = args.quality
 
-    match quality:
-        case "low": quality = "128"
-        case "medium": quality = "192"
-        case "high": quality = "320"
+    genre: str = args.genre
+
 
     # Setting up YoutubeDL
 
-    config: dict[str, Any] = Setting.DOWNLOAD
+    config_download: dict[str, Any] = Setting.DOWNLOAD
+    config_extract: dict[str, Any] = Setting.EXTRACT
 
-    config["postprocessors"][0]["preferredquality"] = quality
+    if debug == True:
+
+        debug_config: dict[str, bool] = {
+            "no_warnings": False,
+            "logtostderr": False,
+            "quiet": False
+        }
+
+        config_download.update(debug_config)
+        config_extract.update(debug_config)
+
 
     if type(output) == str:
 
-        if exists(output):
-            config["outtmpl"] = f"{output}/%(title)s.%(ext)s"
+        if isdir(output):
+            config_download["outtmpl"] = f"{output}/%(title)s.%(ext)s"
 
         else:
-            config["outtmpl"] = output
+            output = Path(output).stem
+            config_download["outtmpl"] = output
+
 
     # Defining metadata
 
     data: dict[str, Any] = {"genre": genre}
 
-    data_playlist: dict[str, Any]
+    data_playlist: dict[str, Any] | None
+    data_playlist = extract_playlist(url, config_extract)
 
-    data_playlist = extract_playlist(url)
-
-    if data_playlist["playlist"] == True:
+    if data_playlist != None:
 
         track_total: int = len(data_playlist["musics"])
         data_playlist["track-total"] = str(track_total)
@@ -130,10 +119,44 @@ def main() -> None:
             data_playlist["track-number"] = str(track_number)
             data = {**data, **data_playlist}
 
-            _download_handler(url, data, config)
+            _download_handler(url, data, config_download)
 
     else:
-        _download_handler(url, data, config)
+        _download_handler(url, data, config_download)
+
+
+def _download_handler(url: str, data: dict[str, Any], config: dict[str, Any]) -> None:
+    """Internal music download function
+
+    Args:
+        url: link of the music that will be downloaded
+        data: pre-extracted metadata that will be added to the music
+        config: configuration dictionary that will be used in YoutubeDL
+    """
+
+    # Downloading music
+
+    data_music: dict[str, str] | None
+    data_music = download_music(url, config)
+
+    if data_music != None:
+
+        data = {**data, **data_music}
+
+        path: str = data["path"]
+        path, _ = splitext(path)
+
+        image_path: str = f"{path}.webp"
+        cover_path: str = create_cover(image_path)
+
+        image: bytes = open(image_path, "rb").read()
+
+        data["cover"] = image
+
+        remove(image_path)
+        remove(cover_path)
+
+        add_metadata(f"{path}.mp3", data)
 
 
 if __name__ == "__main__":

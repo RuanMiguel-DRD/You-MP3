@@ -132,7 +132,7 @@ def _ffmpeg_check(config: dict[str, Any]) -> bool:
     """
 
     try:
-        if config["ffmpeg_location"] != str:
+        if type(config["ffmpeg_location"]) != str:
             raise TypeError
 
         else:
