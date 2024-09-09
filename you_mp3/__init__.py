@@ -18,20 +18,17 @@ __url__ = "https://github.com/RuanMiguel-DRD/You-MP3"
 __email__ = "ruanmigueldrd@outlook.com"
 
 __keywords__ = [
-    # Categories
-    "audio", "conversion", "downloader", "music",
-
-    # Dependencies
-    "ffmpeg", "mutagen", "pillow", "yt-dlp",
-
-    # Others 
-    "metadata", "youtube", "mp3"
+    "conversion", "download", "metadata", "music", "youtube"
 ]
 
 # Imports
 
+# Defines what will be imported when executing "import you_mp3"
+
 from .downloader import Setting, download_music, extract_playlist
 from .metadata import add_metadata, create_cover
+
+# Defines what will be imported when running "from you_mp3 import *"
 
 __all__ = [
     "Setting", "download_music", "extract_playlist",

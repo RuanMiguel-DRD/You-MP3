@@ -11,11 +11,12 @@ license = "Unlicense"
 description = "Tool for downloading music with added metadata"
 readme = "README.md"
 
+homepage = "https://pypi.org/project/You-MP3/"
 repository = "https://github.com/RuanMiguel-DRD/You-MP3"
 
 authors = ["RuanMiguel-DRD <ruanmigueldrd@outlook.com>"]
 
-keywords = ["download", "music", "youtube"]
+keywords = ["conversion", "download", "metadata", "music", "youtube"]
 
 classifiers = [
     "Natural Language :: English",
