@@ -100,8 +100,8 @@ def trim_music(mp3_path: str, start: int, end: int, debug: bool = False) -> str:
 
     Args:
         mp3_path: string containing the path to the mp3 file
-        start: string containing the moment the music should start
-        end: string containing the moment the music should end
+        start: time in seconds from where the music should start
+        end: time in seconds from where the music should end
         debug (optional): boolean to define whether or not to enable debugging
 
     Returns:
@@ -119,15 +119,12 @@ def trim_music(mp3_path: str, start: int, end: int, debug: bool = False) -> str:
 
         mp3_file: MP3 = MP3(mp3_path)
 
-        if not mp3_file.info.length < end:
+        if mp3_file.info.length > end:
 
             command: str = f"ffmpeg -i \"{mp3_path}\" -ss {start} -to {end} -c copy \"{new_path}\" -loglevel "
 
-            if debug == True:
-                command += "info"
-
-            else:
-                command += "quiet"
+            if debug == True: command += "info"
+            else: command += "quiet"
 
             ffmpeg_check(None)
 

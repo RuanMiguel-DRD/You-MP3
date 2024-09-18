@@ -42,6 +42,17 @@ def ffmpeg_check(config: dict[str, Any] | None = None) -> None:
 
 
 def format_time(time: str) -> int:
+    """Function to format time in whole seconds
+
+    Args:
+        time: string with a time in the format HH:MM:SS
+
+    Raises:
+        TypeError: if the time string is not in any compatible format
+
+    Returns:
+        int: time converted to total seconds
+    """
 
     hours: int
     minutes: int

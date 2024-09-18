@@ -94,7 +94,6 @@ def main() -> None:
     data: dict[str, Any] = {"genre": genre}
 
     print("[you-mp3] Checking if the url belongs to a playlist")
-
     data.update(extract_playlist(url, config_extract))
 
     if data["playlist"] == True:
@@ -102,7 +101,7 @@ def main() -> None:
         album: str = data["album"]
 
         try:
-            print("[you-mp3] Creating the album folder")
+            print(f"[you-mp3] Creating the album folder: {album}")
             mkdir(album)
 
         except (FileExistsError):
@@ -116,7 +115,7 @@ def main() -> None:
     track_number: int = 0
 
     start_valid: bool = True
-    end_valid: bool = False
+    end_valid: bool = True
 
     for music in data["musics"]:
 
@@ -141,7 +140,7 @@ def main() -> None:
 
         except (TypeError):
             start_valid = False
-            print("[you-mp3] Invalid start time")
+            print(f"[you-mp3] Invalid start time: {start}")
 
         end_formatted: int = 0
         try:
@@ -150,25 +149,31 @@ def main() -> None:
 
         except (TypeError):
             end_valid = False
-            print("[you-mp3] Invalid end time")
+            print(f"[you-mp3] Invalid end time: {end}")
 
-        if not start_formatted == 0 and not end_formatted == 0:
+        valid_time: bool = False
+
+        if start < end:
+            valid_time = True
+
+        if start_formatted != 0 or end_formatted != 0:
 
             try:
-                trim_music_path: str = trim_music(music_path, start_formatted, end_formatted, debug)
+                if valid_time == True:
+                    trim_music_path: str = trim_music(music_path, start_formatted, end_formatted, debug)
 
-                print("[you-mp3] Replacing original music")
-                remove(music_path)
-                rename(trim_music_path, music_path)
+                    print(f"[you-mp3] Replacing original music: {music_path}")
+                    remove(music_path)
+                    rename(trim_music_path, music_path)
 
-            except (ValueError):
-                print("[you-mp3] Unable to cut the music")
+            except (ValueError) as err:
+                print(f"[you-mp3] Unable to cut the music: {err}")
 
-        print("[you-mp3] Removing pre-conversion files")
+        print(f"[you-mp3] Removing pre-conversion files: \"{image_path}\" and \"{cover_path}\"")
         remove(image_path)
         remove(cover_path)
 
-        print("[you-mp3] Adding metadata")
+        print(f"[you-mp3] Adding metadata: {music_path}")
         add_metadata(music_path, data)
 
 
