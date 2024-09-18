@@ -23,14 +23,10 @@ __keywords__ = [
 
 # Imports
 
-# Defines what will be imported when executing "import you_mp3"
-
 from .downloader import Setting, download_music, extract_playlist
-from .metadata import add_metadata, create_cover
-
-# Defines what will be imported when running "from you_mp3 import *"
+from .metadata import add_metadata, create_cover, trim_music
 
 __all__ = [
     "Setting", "download_music", "extract_playlist",
-    "add_metadata", "create_cover"
+    "add_metadata", "create_cover", "trim_music"
 ]

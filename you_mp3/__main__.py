@@ -2,21 +2,18 @@
 
 from argparse import _ArgumentGroup as ArgumentGroup, ArgumentParser, Namespace
 
-from os import remove
-from os.path import isdir, splitext
-
-from pathlib import Path
+from os import getcwd, mkdir, remove, rename
 
 from typing import Any
 
 from .downloader import Setting, download_music, extract_playlist
-from .metadata import add_metadata, create_cover
+from .metadata import add_metadata, create_cover, trim_music
+
+from .__utils import format_time
 
 
 def main() -> None:
     "Main function of the code"
-
-    # Command line construction
 
     arguments: ArgumentParser = ArgumentParser(
         prog="you-mp3",
@@ -31,26 +28,19 @@ def main() -> None:
     )
 
     arguments.add_argument(
-        "-d --debug",
+        "-d", "--debug",
+        dest="debug",
         help="enables runtime debugging",
         action="store_true",
-        default=False,
-        dest="debug"
+        default=False
     )
 
-    arguments.add_argument(
-        "-o",
-        dest="output",
-        help="location where the songs will be saved",
-        type=str
+    group_edition: ArgumentGroup = arguments.add_argument_group(
+        title="edition",
+        description="parameter for editing metadata"
     )
 
-    group: ArgumentGroup = arguments.add_argument_group(
-        title="editing",
-        description="parameters for editing music"
-    )
-
-    group.add_argument(
+    group_edition.add_argument(
         "-g",
         dest="genre",
         help="musical genres that will be attributed",
@@ -58,20 +48,34 @@ def main() -> None:
         type=str
     )
 
+    group_trim: ArgumentGroup = arguments.add_argument_group(
+        title="trim",
+        description="parameters for clipping songs, do not work with playlists"
+    )
 
-    # Argument handling
+    group_trim.add_argument(
+        "-s --start",
+        dest="start",
+        help="defines the moment the music should start",
+        default="0"
+    )
+
+    group_trim.add_argument(
+        "-e --end",
+        dest="end",
+        help="defines the moment the music should end",
+        default="0"
+    )
 
     args: Namespace = arguments.parse_args()
 
     url: str = args.url
 
     debug: bool = args.debug
-    output: str | None = args.output
 
     genre: str = args.genre
-
-
-    # Setting up YoutubeDL
+    start: str = args.start
+    end: str = args.end
 
     config_download: dict[str, Any] = Setting.DOWNLOAD
     config_extract: dict[str, Any] = Setting.EXTRACT
@@ -87,76 +91,85 @@ def main() -> None:
         config_download.update(debug_config)
         config_extract.update(debug_config)
 
-
-    if type(output) == str:
-
-        if isdir(output):
-            config_download["outtmpl"] = f"{output}/%(title)s.%(ext)s"
-
-        else:
-            output = Path(output).stem
-            config_download["outtmpl"] = output
-
-
-    # Defining metadata
-
     data: dict[str, Any] = {"genre": genre}
 
-    data_playlist: dict[str, Any] | None
-    data_playlist = extract_playlist(url, config_extract)
+    print("[you-mp3] Checking if the url belongs to a playlist")
 
-    if data_playlist != None:
+    data.update(extract_playlist(url, config_extract))
 
-        track_total: int = len(data_playlist["musics"])
-        data_playlist["track-total"] = str(track_total)
+    if data["playlist"] == True:
 
-        track_number: int = 0
+        album: str = data["album"]
 
-        for url in data_playlist["musics"]:
+        try:
+            print("[you-mp3] Creating the album folder")
+            mkdir(album)
 
-            track_number += 1
+        except (FileExistsError):
+            ...
 
-            data_playlist["track-number"] = str(track_number)
-            data = {**data, **data_playlist}
+        config_download["outtmpl"] = f"{getcwd()}/{album}/%(title)s.%(ext)s"
 
-            _download_handler(url, data, config_download)
+    track_total: int = len(data["musics"])
+    data["track-total"] = str(track_total)
 
-    else:
-        _download_handler(url, data, config_download)
+    track_number: int = 0
 
+    start_valid: bool = True
+    end_valid: bool = False
 
-def _download_handler(url: str, data: dict[str, Any], config: dict[str, Any]) -> None:
-    """Internal music download function
+    for music in data["musics"]:
 
-    Args:
-        url: link of the music that will be downloaded
-        data: pre-extracted metadata that will be added to the music
-        config: configuration dictionary that will be used in YoutubeDL
-    """
+        track_number += 1
+        data["track-number"] = str(track_number)
 
-    # Downloading music
+        print(f"[you-mp3] Downloading the music: {music}")
+        data.update(download_music(music, config_download))
 
-    data_music: dict[str, str] | None
-    data_music = download_music(url, config)
+        music_path: str = data["path"].replace(".webm", ".mp3")
+        image_path: str = data["path"].replace(".webm", ".webp")
 
-    if data_music != None:
-
-        data = {**data, **data_music}
-
-        path: str = data["path"]
-        path, _ = splitext(path)
-
-        image_path: str = f"{path}.webp"
         cover_path: str = create_cover(image_path)
-
         image: bytes = open(image_path, "rb").read()
 
         data["cover"] = image
 
+        start_formatted: int = 0
+        try:
+            if start_valid == True:
+                start_formatted = format_time(start)
+
+        except (TypeError):
+            start_valid = False
+            print("[you-mp3] Invalid start time")
+
+        end_formatted: int = 0
+        try:
+            if end_valid == True:
+                end_formatted = format_time(end)
+
+        except (TypeError):
+            end_valid = False
+            print("[you-mp3] Invalid end time")
+
+        if not start_formatted == 0 and not end_formatted == 0:
+
+            try:
+                trim_music_path: str = trim_music(music_path, start_formatted, end_formatted, debug)
+
+                print("[you-mp3] Replacing original music")
+                remove(music_path)
+                rename(trim_music_path, music_path)
+
+            except (ValueError):
+                print("[you-mp3] Unable to cut the music")
+
+        print("[you-mp3] Removing pre-conversion files")
         remove(image_path)
         remove(cover_path)
 
-        add_metadata(f"{path}.mp3", data)
+        print("[you-mp3] Adding metadata")
+        add_metadata(music_path, data)
 
 
 if __name__ == "__main__":

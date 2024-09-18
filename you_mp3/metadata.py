@@ -1,12 +1,16 @@
 "Module for handling metadata and creating covers"
 
+from mutagen.mp3 import MP3
 from mutagen.id3 import ID3
 from mutagen.id3._frames import APIC, TALB, TCON, TDRC, TIT2, TPE1, TPE2, TRCK
 
 from PIL import Image
 from PIL.Image import Image as image
 
+from os import system
 from os.path import splitext
+
+from .__utils import ffmpeg_check
 
 
 def add_metadata(mp3_path: str, metadata: dict[str, str | bytes]) -> None:
@@ -14,6 +18,7 @@ def add_metadata(mp3_path: str, metadata: dict[str, str | bytes]) -> None:
 
     Args:
         mp3_path: string containing the path to the mp3 file
+        If you do not specify a valid path, an empty file containing the metadata will be generated instead
         metadata: structured dictionary containing the metadata
 
     Metadata:
@@ -33,8 +38,6 @@ def add_metadata(mp3_path: str, metadata: dict[str, str | bytes]) -> None:
 
         For cover:
             - cover: binary data containing the cover image
-
-    If you do not specify a valid path, an empty file containing the metadata will be generated instead
     """
 
     # Although EasyID3 exists, which is a simpler interface, we use traditional ID3 for compatibility and flexibility reasons
@@ -85,9 +88,55 @@ def create_cover(image_path: str, image_size: tuple[int, int] = (600, 600)) -> s
 
     file_name: str
     file_name, _ = splitext(image_path)
-
-    file_name = f"{file_name}.cover.jpeg"
+    file_name += ".cover.jpeg"
 
     image_data.save(file_name, "JPEG")
 
     return file_name
+
+
+def trim_music(mp3_path: str, start: int, end: int, debug: bool = False) -> str:
+    """Cut out a section of the music
+
+    Args:
+        mp3_path: string containing the path to the mp3 file
+        start: string containing the moment the music should start
+        end: string containing the moment the music should end
+        debug (optional): boolean to define whether or not to enable debugging
+
+    Returns:
+        str: string with the music path after the cuts
+
+    Raises:
+        ValueError: start time happens after end time, or end time is longer than the total time of the music
+    """
+
+    new_path: str
+    new_path, _ = splitext(mp3_path)
+    new_path += ".trim.mp3"
+
+    if start < end:
+
+        mp3_file: MP3 = MP3(mp3_path)
+
+        if not mp3_file.info.length < end:
+
+            command: str = f"ffmpeg -i \"{mp3_path}\" -ss {start} -to {end} -c copy \"{new_path}\" -loglevel "
+
+            if debug == True:
+                command += "info"
+
+            else:
+                command += "quiet"
+
+            ffmpeg_check(None)
+
+            system(command)
+
+            return new_path
+
+        else:
+            raise ValueError("Ending time greater than the total time of the music")
+
+    else:
+        raise ValueError("The start time is after the end time")

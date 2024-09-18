@@ -8,9 +8,7 @@ from shutil import which
 
 from typing import Any
 
-
-_ERROR_TYPE: str = "Unexpected primitive type"
-"Error if the data variable has a value with an incorrect primitive type"
+from .__utils import ERROR_TYPE, ffmpeg_check
 
 
 class Setting():
@@ -20,7 +18,8 @@ class Setting():
         "force_generic_extractor": False,
         "no_warnings": True,
         "logtostderr": True,
-        "quiet": True
+        "quiet": True,
+        "debug": False
     }
     "Configuration dictionary base"
 
@@ -50,7 +49,7 @@ class Setting():
     "Configuration dictionary for music download"
 
 
-def download_music(url: str, config: dict[str, Any] = Setting.DOWNLOAD) -> dict[str, str] | None:
+def download_music(url: str, config: dict[str, Any] = Setting.DOWNLOAD) -> dict[str, str]:
     """Download the music and return your information
 
     Args:
@@ -59,33 +58,32 @@ def download_music(url: str, config: dict[str, Any] = Setting.DOWNLOAD) -> dict[
 
     Returns:
         dict: dictionary with metadata about the downloaded music
-        None: if it does not extract the metadata
     """
 
-    if _ffmpeg_check(config):
+    ffmpeg_check(config)
 
-        data: dict[str, str] | None
-        with YoutubeDL(config) as youtube:
-            data = youtube.extract_info(url, download=True)
-            youtube.close()
+    data: dict[str, str] | None
+    with YoutubeDL(config) as youtube:
+        data = youtube.extract_info(url, download=True)
+        youtube.close()
 
-        assert type(data) == dict, _ERROR_TYPE
+    assert type(data) == dict, ERROR_TYPE
 
-        path: str = youtube.prepare_filename(data)
-        title: str = data.get("title", "Unknown Title")
-        artist: str = data.get("uploader", "Unknown Artist")
-        date: str = data.get("upload_date", "Unknown Date")
-        date = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    path: str = youtube.prepare_filename(data)
+    title: str = data.get("title", "Unknown Title")
+    artist: str = data.get("uploader", "Unknown Artist")
+    date: str = data.get("upload_date", "Unknown Date")
+    date = f"{date[:4]}-{date[4:6]}-{date[6:]}"
 
-        return {
-            "path": path,
-            "title": title,
-            "artist": artist,
-            "date": date
-        }
+    return {
+        "path": path,
+        "title": title,
+        "artist": artist,
+        "date": date
+    }
 
 
-def extract_playlist(url: str, config: dict[str, Any] = Setting.EXTRACT) -> dict[str, Any] | None:
+def extract_playlist(url: str, config: dict[str, Any] = Setting.EXTRACT) -> dict[str, Any]:
     """Extract playlist information
 
     Args:
@@ -94,7 +92,6 @@ def extract_playlist(url: str, config: dict[str, Any] = Setting.EXTRACT) -> dict
 
     Returns:
         dict: dictionary containing structured information about the playlist
-        None: if the url does not belong to a playlist
     """
 
     data: dict[str, str] | None
@@ -102,7 +99,7 @@ def extract_playlist(url: str, config: dict[str, Any] = Setting.EXTRACT) -> dict
         data = youtube.extract_info(url, download=False)
         youtube.close()
 
-    assert type(data) == dict, _ERROR_TYPE
+    assert type(data) == dict, ERROR_TYPE
 
     if "entries" in data:
 
@@ -111,35 +108,14 @@ def extract_playlist(url: str, config: dict[str, Any] = Setting.EXTRACT) -> dict
         musics: list[str] = [entry.get("url") for entry in data["entries"]] # type: ignore
 
         return {
+            "playlist": True,
             "musics": musics,
             "album": album,
             "artist-album": artist_album
         }
 
-
-def _ffmpeg_check(config: dict[str, Any]) -> bool:
-    """Internal function to check if ffmpe_location is set correctly
-
-    Args:
-        config: YoutubeDL configuration dictionary
-
-    Raises:
-        KeyError: key \"ffmpeg_location\" is not defined in the dictionary
-        TypeError: key \"ffmpeg_location\" is defined without a value
-
-    Returns:
-        bool: if it does not generate any error, it returns true
-    """
-
-    try:
-        if type(config["ffmpeg_location"]) != str:
-            raise TypeError
-
-        else:
-            return True
-
-    except (KeyError):
-        raise KeyError("\"ffmpeg_location\" key not set")
-
-    except (TypeError):
-        raise TypeError("\"ffmpeg_location\" key set with invalid value")
+    else:
+        return {
+            "playlist": False,
+            "musics": [url]
+        }
