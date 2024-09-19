@@ -114,8 +114,19 @@ def main() -> None:
 
     track_number: int = 0
 
-    start_valid: bool = True
-    end_valid: bool = True
+    start_formatted: int = 0
+    try:
+        start_formatted = format_time(start)
+
+    except (TypeError):
+        print(f"[you-mp3] Invalid start time: {start}")
+
+    end_formatted: int = 0
+    try:
+        end_formatted = format_time(end)
+
+    except (TypeError):
+        print(f"[you-mp3] Invalid end time: {end}")
 
     for music in data["musics"]:
 
@@ -133,38 +144,14 @@ def main() -> None:
 
         data["cover"] = image
 
-        start_formatted: int = 0
-        try:
-            if start_valid == True:
-                start_formatted = format_time(start)
-
-        except (TypeError):
-            start_valid = False
-            print(f"[you-mp3] Invalid start time: {start}")
-
-        end_formatted: int = 0
-        try:
-            if end_valid == True:
-                end_formatted = format_time(end)
-
-        except (TypeError):
-            end_valid = False
-            print(f"[you-mp3] Invalid end time: {end}")
-
-        valid_time: bool = False
-
-        if start < end:
-            valid_time = True
-
         if start_formatted != 0 or end_formatted != 0:
 
             try:
-                if valid_time == True:
-                    trim_music_path: str = trim_music(music_path, start_formatted, end_formatted, debug)
+                trim_music_path: str = trim_music(music_path, start_formatted, end_formatted, debug)
 
-                    print(f"[you-mp3] Replacing original music: {music_path}")
-                    remove(music_path)
-                    rename(trim_music_path, music_path)
+                print(f"[you-mp3] Replacing original music: {music_path}")
+                remove(music_path)
+                rename(trim_music_path, music_path)
 
             except (ValueError) as err:
                 print(f"[you-mp3] Unable to cut the music: {err}")

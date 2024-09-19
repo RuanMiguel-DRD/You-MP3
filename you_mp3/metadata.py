@@ -95,7 +95,7 @@ def create_cover(image_path: str, image_size: tuple[int, int] = (600, 600)) -> s
     return file_name
 
 
-def trim_music(mp3_path: str, start: int, end: int, debug: bool = False) -> str:
+def trim_music(mp3_path: str, start: int = 0, end: int = 0, debug: bool = False) -> str:
     """Cut out a section of the music
 
     Args:
@@ -108,23 +108,40 @@ def trim_music(mp3_path: str, start: int, end: int, debug: bool = False) -> str:
         str: string with the music path after the cuts
 
     Raises:
-        ValueError: start time happens after end time, or end time is longer than the total time of the music
+        ValueError: when providing invalid values, such as start and end with 0, a start value greater than the end value, or an end greater than the duration of the music
     """
+
+    if start == 0 and end == 0:
+        raise ValueError("You need to pass a value to start or end")
 
     new_path: str
     new_path, _ = splitext(mp3_path)
     new_path += ".trim.mp3"
 
+    mp3_file: MP3 = MP3(mp3_path)
+
+    if end == 0:
+        end = mp3_file.info.length
+
     if start < end:
 
-        mp3_file: MP3 = MP3(mp3_path)
+        if mp3_file.info.length >= end:
 
-        if mp3_file.info.length > end:
+            command: str = f"ffmpeg -i \"{mp3_path}\""
 
-            command: str = f"ffmpeg -i \"{mp3_path}\" -ss {start} -to {end} -c copy \"{new_path}\" -loglevel "
+            if start != 0:
+                command += f" -ss {start}"
 
-            if debug == True: command += "info"
-            else: command += "quiet"
+            if end != mp3_file.info.length:
+                command += f" -to {end}"
+
+            command += f" -c copy \"{new_path}\" -loglevel "
+
+            if debug == True:
+                command += "info"
+
+            else:
+                command += "quiet"
 
             ffmpeg_check(None)
 
