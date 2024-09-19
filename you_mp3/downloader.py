@@ -25,11 +25,13 @@ class Setting():
 
     EXTRACT: dict[str, bool] = {
         "extract_flat": True,
+        "skip_download": True,
         **BASE
     }
     "Configuration dictionary for playlist extraction"
 
     DOWNLOAD: dict[str, Any] = {
+        "skip_download": False,
         "overwrites": True,
         "noplaylist": True,
         "writethumbnail": True,
@@ -64,7 +66,7 @@ def download_music(url: str, config: dict[str, Any] = Setting.DOWNLOAD) -> dict[
 
     data: dict[str, str] | None
     with YoutubeDL(config) as youtube:
-        data = youtube.extract_info(url, download=True)
+        data = youtube.extract_info(url)
         youtube.close()
 
     assert type(data) == dict, ERROR_TYPE
@@ -96,7 +98,7 @@ def extract_playlist(url: str, config: dict[str, Any] = Setting.EXTRACT) -> dict
 
     data: dict[str, str] | None
     with YoutubeDL(config) as youtube:
-        data = youtube.extract_info(url, download=False)
+        data = youtube.extract_info(url)
         youtube.close()
 
     assert type(data) == dict, ERROR_TYPE

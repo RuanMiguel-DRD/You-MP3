@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 
 name = "You-MP3"
-version = "3.1.0"
+version = "3.1.1"
 license = "Unlicense"
 description = "Tool for downloading music with added metadata"
 readme = "README.md"
