@@ -41,7 +41,7 @@ def main() -> None:
     )
 
     group_edition.add_argument(
-        "-g",
+        "-g", "--genre",
         dest="genre",
         help="musical genres that will be attributed",
         default="Unknown Genre",
@@ -69,18 +69,10 @@ def main() -> None:
 
     args: Namespace = arguments.parse_args()
 
-    url: str = args.url
-
-    debug: bool = args.debug
-
-    genre: str = args.genre
-    start: str = args.start
-    end: str = args.end
-
     config_download: dict[str, Any] = Setting.DOWNLOAD
     config_extract: dict[str, Any] = Setting.EXTRACT
 
-    if debug == True:
+    if args.debug == True:
 
         debug_config: dict[str, bool] = {
             "no_warnings": False,
@@ -91,10 +83,10 @@ def main() -> None:
         config_download.update(debug_config)
         config_extract.update(debug_config)
 
-    data: dict[str, Any] = {"genre": genre}
+    data: dict[str, Any] = {"genre": args.genre}
 
     print("[you-mp3] Checking if the url belongs to a playlist")
-    data.update(extract_playlist(url, config_extract))
+    data.update(extract_playlist(args.url, config_extract))
 
     if data["playlist"] == True:
 
@@ -116,17 +108,17 @@ def main() -> None:
 
     start_formatted: int = 0
     try:
-        start_formatted = format_time(start)
+        start_formatted = format_time(args.start)
 
     except (TypeError):
-        print(f"[you-mp3] Invalid start time: {start}")
+        print(f"[you-mp3] Invalid start time: {args.start}")
 
     end_formatted: int = 0
     try:
-        end_formatted = format_time(end)
+        end_formatted = format_time(args.end)
 
     except (TypeError):
-        print(f"[you-mp3] Invalid end time: {end}")
+        print(f"[you-mp3] Invalid end time: {args.end}")
 
     for music in data["musics"]:
 
@@ -147,7 +139,7 @@ def main() -> None:
         if start_formatted != 0 or end_formatted != 0:
 
             try:
-                trim_music_path: str = trim_music(music_path, start_formatted, end_formatted, debug)
+                trim_music_path: str = trim_music(music_path, start_formatted, end_formatted, args.debug)
 
                 print(f"[you-mp3] Replacing original music: {music_path}")
                 remove(music_path)
